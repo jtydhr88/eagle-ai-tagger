@@ -1,0 +1,17 @@
+{
+    "id": "e057b31d-3b86-468b-abf8-7b443289015b",
+    "version": "0.1.0",
+    "platform": "all",
+    "arch": "all",
+    "name": "{{manifest.app.name}}",
+    "logo": "./logo.png",
+    "keywords": [],
+    "devTools": false,
+	"fallbackLanguage": "en",
+	"languages": ["en", "zh_CN"],
+    "main": {
+        "url": "index.html",
+        "width": 320,
+        "height": 240
+    }
+}

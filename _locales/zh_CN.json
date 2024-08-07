@@ -1,0 +1,15 @@
+{
+    "manifest": {
+        "app": {
+            "name": "AI 打标签"
+        }
+    },
+    "main": {
+        "button": {
+            "analyze": "分析",
+            "selectAll": "选择全部",
+            "unselect": "取消选择",
+            "appendTags": "追加标签"
+        }
+    }
+}

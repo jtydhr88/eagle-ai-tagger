@@ -1,0 +1,254 @@
+<script src="https://unpkg.com/vue@3"></script>
+<script src="https://unpkg.com/element-plus"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+
+<div id="app">
+    <div>
+        <el-button type="primary" @click="handleClickAnalyze">{{ analyzeButtonText }}</el-button>
+    </div>
+    <div>
+        <el-button type="primary" @click="selectAll">{{ selectAllButtonText }}</el-button>
+        <el-button type="primary" @click="deselectAll">{{ unselectButtonText }}</el-button>
+    </div>
+    <div class="checkbox-container">
+        <div v-for="(tag, index) in analyzeTags" :key="index" class="checkbox-item">
+            <el-checkbox v-model="selectedTags" :label="tag">{{ tag }}</el-checkbox>
+        </div>
+    </div>
+    <div>
+        <el-button type="primary" @click="handleClickAppendTags">{{ appendTagsButtonText }}</el-button>
+    </div>
+</div>
+
+<style>
+    .checkbox-container {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .checkbox-item {
+        margin: 5px;
+    }
+</style>
+
+<script type="module">
+    const ort = require('onnxruntime-node');
+    const fs = require('fs');
+    const path = require('path');
+    const csv = require('csv-parser');
+    const url = require('url');
+    const cv = require(`${__dirname}/opencv.js`);
+    const utils = require(`${__dirname}/utils`);
+
+    const IMAGE_SIZE = 448;
+
+    function markRaw(value) {
+        if (Object.isExtensible(value)) {
+            def(value, "__v_skip", true);
+        }
+
+        return value;
+    }
+
+    const def = (obj, key, value, writable = false) => {
+        Object.defineProperty(obj, key, {
+            configurable: true,
+            enumerable: false,
+            writable,
+            value
+        });
+    };
+
+    let analyzeTags;
+    let item;
+
+    eagle.onPluginCreate(async () => {
+        console.log(cv);
+
+        const modelDir = `${__dirname}/model`;
+
+        const items = await eagle.item.getSelected();
+
+        if (!items.length) {
+            retun;
+        }
+
+
+        const App = {
+            data() {
+                let analyzeButtonText = i18next.t('main.button.analyze');
+                let selectAllButtonText = i18next.t('main.button.selectAll');
+                let unselectButtonText = i18next.t('main.button.unselect');
+                let appendTagsButtonText = i18next.t('main.button.appendTags');
+                return {
+                    analyzeTags,
+                    selectedTags: [],
+                    analyzeButtonText,
+                    selectAllButtonText,
+                    unselectButtonText,
+                    appendTagsButtonText
+                };
+            },
+            methods: {
+                selectAll() {
+                    this.selectedTags = [...this.analyzeTags];
+                },
+                deselectAll() {
+                    this.selectedTags = [];
+                },
+                async handleClickAnalyze() {
+                    item = markRaw(items[0]);
+
+                    console.log('Analyzing image...');
+
+                    console.log('Loading model...');
+
+                    const model = await modelLoad(modelDir);
+
+                    this.analyzeTags = await analysis(item.fileURL, modelDir, model);
+
+                    console.log('Generated tags:', analyzeTags);
+                },
+                async handleClickAppendTags() {
+                    const currentTags = new Set(item.tags);
+                    this.selectedTags.forEach(tag => currentTags.add(tag));
+
+                    item.tags = Array.from(currentTags);
+
+                    item.save();
+                }
+            }
+        };
+
+        const app = Vue.createApp(App);
+
+        app.use(ElementPlus);
+
+        app.mount("#app");
+    });
+
+    async function preprocessImage(imagePath) {
+        const i = await utils.image.create(imagePath);
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = i.width;
+        canvas.height = i.height;
+        ctx.drawImage(i, 0, 0);
+
+        // Read the image
+        let img = cv.imread(canvas);
+
+        // Convert to RGB if it's not already
+        if (img.channels() === 4) {
+            cv.cvtColor(img, img, cv.COLOR_RGBA2RGB);
+        } else if (img.channels() === 1) {
+            cv.cvtColor(img, img, cv.COLOR_GRAY2RGB);
+        }
+
+        const size = Math.max(img.rows, img.cols);
+        const padTop = Math.floor((size - img.rows) / 2);
+        const padBottom = size - img.rows - padTop;
+        const padLeft = Math.floor((size - img.cols) / 2);
+        const padRight = size - img.cols - padLeft;
+
+        cv.copyMakeBorder(img, img, padTop, padBottom, padLeft, padRight, cv.BORDER_CONSTANT, [255, 255, 255, 255]);
+
+        cv.resize(img, img, new cv.Size(IMAGE_SIZE, IMAGE_SIZE), 0, 0, cv.INTER_AREA);
+
+        img.convertTo(img, cv.CV_32FC3);
+
+        const imageData = new Float32Array(IMAGE_SIZE * IMAGE_SIZE * 3);
+        for (let y = 0; y < IMAGE_SIZE; y++) {
+            for (let x = 0; x < IMAGE_SIZE; x++) {
+                const pixel = img.ucharPtr(y, x);
+                imageData[(y * IMAGE_SIZE + x) * 3] = pixel[2];     // Red
+                imageData[(y * IMAGE_SIZE + x) * 3 + 1] = pixel[1]; // Green
+                imageData[(y * IMAGE_SIZE + x) * 3 + 2] = pixel[0]; // Blue
+            }
+        }
+
+        img.delete();
+
+        return new ort.Tensor('float32', imageData, [1, IMAGE_SIZE, IMAGE_SIZE, 3]);
+    }
+
+    async function modelLoad(modelDir) {
+        const onnxPath = path.join(modelDir, "model.onnx");
+
+        const session = await ort.InferenceSession.create(onnxPath);
+
+        const inputName = session.inputNames[0];
+
+        return [session, inputName];
+    }
+
+    async function parseCsv(filePath) {
+        return new Promise((resolve, reject) => {
+            const results = [];
+            fs.createReadStream(filePath)
+                .pipe(csv())
+                .on('data', (data) => results.push(data))
+                .on('end', () => resolve(results))
+                .on('error', (error) => reject(error));
+        });
+    }
+
+    async function analysis(imagePath, modelDir, model) {
+        console.log("analysis");
+        const [session, inputName] = model;
+
+        const csvPath = path.join(modelDir, "selected_tags.csv");
+        const rows = await parseCsv(csvPath);
+
+        const generalTags = rows.filter(row => row.category === "0").map(row => row.name);
+        const characterTags = rows.filter(row => row.category === "4").map(row => row.name);
+
+        const tagFreq = {};
+        const undesiredTags = ["transparent background"];
+
+        const imagePreprocessed = await preprocessImage(imagePath);
+        const results = await session.run({[inputName]: imagePreprocessed});
+        const prob = results[session.outputNames[0]].data;
+
+        const combinedTags = [];
+        let generalTagText = "";
+        let characterTagText = "";
+        const removeUnderscore = true;
+        const captionSeparator = ", ";
+        const generalThreshold = 0.35;
+        const characterThreshold = 0.35;
+
+        for (let i = 4; i < prob.length; i++) {
+            const p = prob[i];
+
+            let tagName;
+
+            if (i - 4 < generalTags.length && p >= generalThreshold) {
+                tagName = generalTags[i - 4];
+            } else if (i - 4 >= generalTags.length && p >= characterThreshold) {
+                tagName = characterTags[i - 4 - generalTags.length];
+            } else {
+                continue;
+            }
+
+            if (removeUnderscore && tagName.length > 3) {
+                tagName = tagName.replace(/_/g, " ");
+            }
+
+            if (!undesiredTags.includes(tagName)) {
+                tagFreq[tagName] = (tagFreq[tagName] || 0) + 1;
+
+                if (i - 4 < generalTags.length) {
+                    generalTagText += captionSeparator + tagName;
+                } else {
+                    characterTagText += captionSeparator + tagName;
+                }
+
+                combinedTags.push(tagName);
+            }
+        }
+
+        return combinedTags;
+    }
+</script>

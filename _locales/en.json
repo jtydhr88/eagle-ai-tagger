@@ -1,0 +1,15 @@
+{
+    "manifest": {
+        "app": {
+            "name": "AI Tagger"
+        }
+    },
+    "main": {
+        "button": {
+            "analyze": "Analyze",
+            "selectAll": "Select All",
+            "unselect": "Unselect",
+            "appendTags": "Append Tags"
+        }
+    }
+}
