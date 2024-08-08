@@ -38,7 +38,7 @@ node install
 * [ ] Tag翻译
   * 你可能注意到了，我使用了 [wd-swinv2-tagger-v3](https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/), 它在stable diffusion的社区中常被用于生成提示词. 我们当然可以用”提示词“作为标签在Eagle中使用, 但是如果作为标签的话，最好将它们翻译成用户对应的语言. 例如, "1girl" 对应 "一个女孩" 或 "smile" to "微笑". 我之后可能会把它们翻译成中文, 但是完成的列表有超过一万个, 这会花些时间. 
 * [ ] 多语言支持
-  * 当然, 我只添加了英语和简体中文的支持. 如果你想要其他语言的话请开个issue。
+  * 目前, 我只添加了英语和简体中文的支持. 如果你想要其他语言的话请开个issue。
 * [ ] 支持同时为多张图片生成标签
   * 当前只支持为一张图片生成标签。最好可以支持多张图片同时生成。
 * [ ] 更好的界面和用户体验
@@ -52,7 +52,7 @@ A: 最主要的原因是, 为了加载需要AI模型, 我们需要一个叫做on
 2. Q: 为什么不把它发布到Eagle官方的插件中心？  
 A: 因为第一个问题的原因，我不认为Eagle官方会接受它即使我尝试去发布，如果之后把第一个问题解决，我应该会考虑发布。
 3. Q: 这个和另一个插件[Eagle-Plugin-AI-Tags](https://github.com/GOvEy1nw/Eagle-Plugin-AI-Tags)有什么区别？
-A: 在[Eagle-Plugin-AI-Tags](https://github.com/GOvEy1nw/Eagle-Plugin-AI-Tags), GOvEy1nw 使用了大语言模型(远端或是本地)去生成标签, 这可能会需要一些额外的步骤，例如申请API key，网络传输，或是有些花费. 我这里选择了纯的本地AI模型，就像之前提到的，它在table diffusion社区中已经证明了它可以很好的生成提示词。
+A: 在[Eagle-Plugin-AI-Tags](https://github.com/GOvEy1nw/Eagle-Plugin-AI-Tags), GOvEy1nw 使用了大语言模型(远端或是本地)去生成标签, 这可能会需要一些额外的步骤，例如申请API key，网络传输，或是有些花费. 我这里选择了纯的本地AI模型，就像之前提到的，它在stable diffusion社区中已经证明了它可以很好的生成提示词。
 4. Q: 为什么Eagle官方不做这个，而是你？
 A: 我做这个功能注意是我自己很需要这个功能，所以我就做了，我不太清楚为什么官方没有去做，Eagle可能在未来推出官方的实现，那时我会将这个库给归档。
 
