@@ -35,7 +35,7 @@ node install
 7. 选择标签这时应该就被加到你的图片上了 ![img_3.png](docs/img_3.png)
 
 ## TODO
-* [ ] Tag翻译
+* [x] Tag翻译
   * 你可能注意到了，我使用了 [wd-swinv2-tagger-v3](https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/), 它在stable diffusion的社区中常被用于生成提示词. 我们当然可以用”提示词“作为标签在Eagle中使用, 但是如果作为标签的话，最好将它们翻译成用户对应的语言. 例如, "1girl" 对应 "一个女孩" 或 "smile" to "微笑". 我之后可能会把它们翻译成中文, 但是完成的列表有超过一万个, 这会花些时间. 
 * [ ] 多语言支持
   * 目前, 我只添加了英语和简体中文的支持. 如果你想要其他语言的话请开个issue。

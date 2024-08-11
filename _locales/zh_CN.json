@@ -11,5 +11,9 @@
             "unselect": "取消选择",
             "appendTags": "追加标签"
         }
+    },
+    "tagLang": {
+        "en": "英文",
+        "zh_CN": "简体中文"
     }
 }

@@ -35,7 +35,7 @@ node install
 7. the tags will be added to image now ![img_3.png](docs/img_3.png)
 
 ## TODO
-* [ ] Tag Translation
+* [x] Tag Translation
   * you may notice, I am using [wd-swinv2-tagger-v3](https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/), which is popular in the stable diffusion community for generating prompts. While we can use "prompt" as tags in Eagle, it's better to translate them into the user's language. For example, "1girl" could be translated to "一个女孩" and "smile" to "微笑". I may translate the tags to Chinese later, but since the full list has more than 10,000 tags, it will take time. 
 * [ ] i18n support
   * Currently, I have added support for English and Chinese. Please open an issue if you need another language.

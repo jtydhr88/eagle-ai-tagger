@@ -8,6 +8,12 @@
         <el-button type="primary" @click="handleClickAnalyze">{{ analyzeButtonText }}</el-button>
     </div>
     <div>
+        <el-radio-group v-model="selectedLanguage">
+            <el-radio label="en">{{ tagLangTextEn }}</el-radio>
+            <el-radio label="zh_CN">{{ tagLangTextZhCN }}</el-radio>
+        </el-radio-group>
+    </div>
+    <div>
         <el-button type="primary" @click="selectAll">{{ selectAllButtonText }}</el-button>
         <el-button type="primary" @click="deselectAll">{{ unselectButtonText }}</el-button>
     </div>
@@ -74,20 +80,27 @@
             retun;
         }
 
-
         const App = {
             data() {
                 let analyzeButtonText = i18next.t('main.button.analyze');
                 let selectAllButtonText = i18next.t('main.button.selectAll');
                 let unselectButtonText = i18next.t('main.button.unselect');
                 let appendTagsButtonText = i18next.t('main.button.appendTags');
+                let tagLangTextEn = i18next.t('tagLang.en');
+                let tagLangTextZhCN = i18next.t('tagLang.zh_CN');
+
+                let supportLang = eagle.app.locale === 'en' || eagle.app.locale === 'zh_CN' ? eagle.app.locale : 'en';
+
                 return {
+                    selectedLanguage: supportLang,
                     analyzeTags,
                     selectedTags: [],
                     analyzeButtonText,
                     selectAllButtonText,
                     unselectButtonText,
-                    appendTagsButtonText
+                    appendTagsButtonText,
+                    tagLangTextEn,
+                    tagLangTextZhCN
                 };
             },
             methods: {
@@ -106,7 +119,7 @@
 
                     const model = await modelLoad(modelDir);
 
-                    this.analyzeTags = await analysis(item.fileURL, modelDir, model);
+                    this.analyzeTags = await analysis(item.fileURL, modelDir, model, this.selectedLanguage);
 
                     console.log('Generated tags:', analyzeTags);
                 },
@@ -194,28 +207,36 @@
         });
     }
 
-    async function analysis(imagePath, modelDir, model) {
+    async function analysis(imagePath, modelDir, model, tagLang) {
         console.log("analysis");
+
         const [session, inputName] = model;
 
         const csvPath = path.join(modelDir, "selected_tags.csv");
+
+        let tagLangSet = new Map();
+
+        if (tagLang !== "en") {
+            const tagLangCsvPath = path.join(modelDir, "selected_tags_" + tagLang + ".csv");
+
+            let tagLangRows = await parseCsv(tagLangCsvPath);
+
+            tagLangRows.forEach(tagLangRow => {
+                const values = Object.values(tagLangRow);
+                tagLangSet.set(values[0], values[1]);
+            });
+        }
+
         const rows = await parseCsv(csvPath);
 
         const generalTags = rows.filter(row => row.category === "0").map(row => row.name);
         const characterTags = rows.filter(row => row.category === "4").map(row => row.name);
-
-        const tagFreq = {};
-        const undesiredTags = ["transparent background"];
 
         const imagePreprocessed = await preprocessImage(imagePath);
         const results = await session.run({[inputName]: imagePreprocessed});
         const prob = results[session.outputNames[0]].data;
 
         const combinedTags = [];
-        let generalTagText = "";
-        let characterTagText = "";
-        const removeUnderscore = true;
-        const captionSeparator = ", ";
         const generalThreshold = 0.35;
         const characterThreshold = 0.35;
 
@@ -232,21 +253,19 @@
                 continue;
             }
 
-            if (removeUnderscore && tagName.length > 3) {
-                tagName = tagName.replace(/_/g, " ");
+            let finalTagName;
+            if (tagLang === "en") {
+                finalTagName = tagName.replace(/_/g, " ");
             }
+            else {
+                finalTagName = tagLangSet.get(tagName);
 
-            if (!undesiredTags.includes(tagName)) {
-                tagFreq[tagName] = (tagFreq[tagName] || 0) + 1;
-
-                if (i - 4 < generalTags.length) {
-                    generalTagText += captionSeparator + tagName;
-                } else {
-                    characterTagText += captionSeparator + tagName;
+                if (!finalTagName) {
+                    finalTagName = tagName.replace(/_/g, " ");;
                 }
-
-                combinedTags.push(tagName);
             }
+
+            combinedTags.push(finalTagName);
         }
 
         return combinedTags;
