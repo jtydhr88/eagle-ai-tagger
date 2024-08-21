@@ -18,7 +18,7 @@ git clone https://github.com/jtydhr88/eagle-ai-tagger
 2. go inside the repo
 3. run command
 ```commandline
-node install
+npm install
 ```
 4. download the following model files, and place them into **eagle-ai-tagger/model** folder:
    1. [model](https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/resolve/main/model.onnx)
