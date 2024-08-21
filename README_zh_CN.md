@@ -18,7 +18,7 @@ git clone https://github.com/jtydhr88/eagle-ai-tagger
 2. 进入到文件夹中
 3. 运行命令
 ```commandline
-node install
+npm install
 ```
 4. 下载下面两个文件, 然后把它们放到 **eagle-ai-tagger/model** 文件夹中:
    1. [model](https://huggingface.co/SmilingWolf/wd-swinv2-tagger-v3/resolve/main/model.onnx)
